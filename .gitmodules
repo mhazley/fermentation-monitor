@@ -1,3 +1,0 @@
-[submodule "particle/firmware"]
-	path = particle/firmware
-	url = https://github.com/spark/firmware.git
