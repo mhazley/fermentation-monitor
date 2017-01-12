@@ -1,4 +1,4 @@
-#include "TemperatureSensor.h"
+#include "temperature.h"
 
 #include <math.h>
 #include "spark_wiring.h"
@@ -21,7 +21,6 @@ TemperatureSensorMap TemperatureSensor::initSensors()
     TemperatureSensorMap sensors;
 
     sensors[TEMP_A] = new TemperatureSensor(TEMP_A, IO_TEMP_A_PIN);
-    sensors[TEMP_B] = new TemperatureSensor(TEMP_B, IO_TEMP_B_PIN);
 
     return sensors;
 };
@@ -67,7 +66,6 @@ const char* TemperatureSensor::RoleToString(TemperatureSensorRole role)
 {
     switch (role) {
         case TEMP_A:        return S_TEMP_A;      break;
-        case TEMP_B:        return S_TEMP_B;      break;
     }
 
     return S_TEMP_UNKNOWN;

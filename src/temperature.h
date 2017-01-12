@@ -28,6 +28,8 @@ class TemperatureSensor
 
         TemperatureSensor(TemperatureSensorRole, uint8_t);
 
+        const char* roleString();
+
         float getCelsius();
 };
 

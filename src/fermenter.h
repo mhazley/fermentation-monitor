@@ -15,4 +15,8 @@
   }                                      \
 } while (0)
 
+void setTemperaturePublishData();
+bool checkCanSerialPrint();
+void printSerial();
+
 #endif // FERMENTER_H
