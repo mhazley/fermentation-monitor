@@ -1,7 +1,7 @@
 #include "fermenter.h"
 #include "PublishController.h"
 
-#define DEFAULT_REMOTE_DELAY        10000UL
+#define DEFAULT_REMOTE_DELAY        1000UL
 
 PublishController::PublishController()
 {
@@ -10,15 +10,12 @@ PublishController::PublishController()
       remoteTimer = new CallbackTimer<PublishController>(this, &PublishController::callbackRemote, true);
 
       remoteTimer->setDuration(DEFAULT_REMOTE_DELAY, MILLISECONDS);
-
-      deviceId = System.deviceID();
 }
 
 void PublishController::start()
 {
     remoteTimer->start();
     started = true;
-    sendValues();
 }
 
 const char* PublishController::getRemoteUrlString(PublishType type)
@@ -26,6 +23,9 @@ const char* PublishController::getRemoteUrlString(PublishType type)
     switch (type)
     {
         case PUBLISH_TYPE_TEMPERATURE:        return "geometry.fermenter.temperature"; break;
+        case PUBLISH_TYPE_SETPOINT:           return "geometry.fermenter.setpoint"; break;
+        case PUBLISH_TYPE_HEATING:            return "geometry.fermenter.heating"; break;
+        case PUBLISH_TYPE_COOLING:            return "geometry.fermenter.cooling"; break;
     }
 
     return "geometry.fermenter.unknown";
@@ -40,17 +40,19 @@ PublishError PublishController::setValue(PublishType type, String data)
 
 void PublishController::callbackRemote()
 {
-    sendValues();
+    sendValue();
+
+    if( ++publishType == PUBLISH_TYPE_MAX )
+    {
+        publishType = 0;
+    }
+
 }
 
-void PublishController::sendValues()
+void PublishController::sendValue()
 {
-    Serial.println("sendValues");
-    for (publish_type_it iterator = publishMap.begin(); iterator != publishMap.end(); iterator++)
-    {
-        Serial.println("PUBLISH");
-        Serial.println(getRemoteUrlString(iterator->first));
-        Serial.println(iterator->second);
-        Particle.publish(getRemoteUrlString(iterator->first), iterator->second, DEFAULT_PUBLISH_TTL, PRIVATE);
-    }
+    Serial.println("===> Publish");
+    Serial.println(getRemoteUrlString((PublishType)publishType));
+    Serial.println(publishMap[(PublishType)publishType]);
+    Particle.publish(getRemoteUrlString((PublishType)publishType), publishMap[(PublishType)publishType], DEFAULT_PUBLISH_TTL, PRIVATE);
 }

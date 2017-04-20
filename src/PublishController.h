@@ -8,14 +8,12 @@
 
 enum PublishType
 {
-    PUBLISH_TYPE_TEMPERATURE      = 1 << 1,
-};
+    PUBLISH_TYPE_TEMPERATURE = 0,
+    PUBLISH_TYPE_SETPOINT    = 1,
+    PUBLISH_TYPE_HEATING     = 2,
+    PUBLISH_TYPE_COOLING     = 3,
 
-enum PublishDestination
-{
-    PUBLISH_DESTINATION_REMOTE    = 1,
-    PUBLISH_DESTINATION_LOCAL     = 1 << 1,
-    PUBLISH_DESTINATION_ALL       = PUBLISH_DESTINATION_REMOTE | PUBLISH_DESTINATION_LOCAL
+    PUBLISH_TYPE_MAX         = 4
 };
 
 enum PublishError
@@ -34,13 +32,13 @@ class PublishController
         bool started;
 
         typedef std::map<PublishType, String> PublishMap;
-        typedef std::map<PublishType, String>::const_iterator publish_type_it;
+        //typedef std::map<PublishType, String>::const_iterator publish_type_it;
 
-        String deviceId;
+        int publishType = 0;
 
         PublishMap publishMap;
 
-        void sendValues();
+        void sendValue();
 
         const char* getRemoteUrlString(PublishType type);
 
