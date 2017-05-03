@@ -12,8 +12,9 @@ enum PublishType
     PUBLISH_TYPE_SETPOINT    = 1,
     PUBLISH_TYPE_HEATING     = 2,
     PUBLISH_TYPE_COOLING     = 3,
+    PUBLISH_TYPE_RUNNING     = 4,
 
-    PUBLISH_TYPE_MAX         = 4
+    PUBLISH_TYPE_MAX         = 5
 };
 
 enum PublishError
@@ -38,7 +39,7 @@ class PublishController
 
         PublishMap publishMap;
 
-        void sendValue();
+        void sendValue(bool print);
 
         const char* getRemoteUrlString(PublishType type);
 

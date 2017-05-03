@@ -26,6 +26,7 @@ const char* PublishController::getRemoteUrlString(PublishType type)
         case PUBLISH_TYPE_SETPOINT:           return "geometry.fermenter.setpoint"; break;
         case PUBLISH_TYPE_HEATING:            return "geometry.fermenter.heating"; break;
         case PUBLISH_TYPE_COOLING:            return "geometry.fermenter.cooling"; break;
+        case PUBLISH_TYPE_RUNNING:            return "geometry.fermenter.running"; break;
     }
 
     return "geometry.fermenter.unknown";
@@ -40,7 +41,7 @@ PublishError PublishController::setValue(PublishType type, String data)
 
 void PublishController::callbackRemote()
 {
-    sendValue();
+    sendValue(false);
 
     if( ++publishType == PUBLISH_TYPE_MAX )
     {
@@ -49,10 +50,13 @@ void PublishController::callbackRemote()
 
 }
 
-void PublishController::sendValue()
+void PublishController::sendValue(bool print)
 {
-    Serial.println("===> Publish");
-    Serial.println(getRemoteUrlString((PublishType)publishType));
-    Serial.println(publishMap[(PublishType)publishType]);
+    if( print )
+    {
+        Serial.println("===> Publish");
+        Serial.println(getRemoteUrlString((PublishType)publishType));
+        Serial.println(publishMap[(PublishType)publishType]);
+    }
     Particle.publish(getRemoteUrlString((PublishType)publishType), publishMap[(PublishType)publishType], DEFAULT_PUBLISH_TTL, PRIVATE);
 }

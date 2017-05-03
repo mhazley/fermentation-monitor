@@ -52,8 +52,6 @@ float TemperatureSensor::getCelsius()
     temperature = 1.0 / temperature;      // Invert
     temperature -= 273.15;                // convert to C
 
-    value = temperature;
-
     return temperature;
 };
 

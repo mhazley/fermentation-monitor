@@ -7,12 +7,15 @@ class FermentationController
 {
 
 private:
-    bool   didStart = false;
-    double setPoint = 0.0;
-    bool   heating = false;
-    bool   cooling = false;
+    bool          didStart = false;
+    double        setPoint = 0.0;
+    bool          heating = false;
+    bool          cooling = false;
+    unsigned long lastProcessTime  = 0UL;
+
     void   setHeatCoolPublishData(bool heat, bool cool);
     void   setSetPointPublishData();
+    void   setRunningPublishData();
 
 public:
     void   process();

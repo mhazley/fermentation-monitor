@@ -126,6 +126,7 @@ int functionRouter(String params)
 
         if ( ( strcmp("setpoint", args[0]) == 0 ) && argCount == 2 )
         {
+            Serial.println( "setSetpoint()!!" );
             setSetpoint( args[1] );
             returnValue = ROUTE_OK;
         }
@@ -198,4 +199,6 @@ void printSerial()
         Serial.print(sensor->getCelsius());
         Serial.println("°C");
     }
+
+    if( fermentationController->isStarted() ) fermentationController->printDescription();
 }
