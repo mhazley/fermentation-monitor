@@ -13,8 +13,9 @@ enum PublishType
     PUBLISH_TYPE_HEATING     = 2,
     PUBLISH_TYPE_COOLING     = 3,
     PUBLISH_TYPE_RUNNING     = 4,
+    PUBLISH_TYPE_STATUS      = 5,
 
-    PUBLISH_TYPE_MAX         = 5
+    PUBLISH_TYPE_MAX         = 6
 };
 
 enum PublishError

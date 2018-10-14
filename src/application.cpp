@@ -14,7 +14,7 @@ PublishController*          publishController;
 FermentationController*     fermentationController;
 
 unsigned long lastSerialTime  = 0UL;
-unsigned long serialDelay     = 1000UL;
+unsigned long serialDelay     = 2000UL;
 bool          serialPrintLoop = false;
 
 void setup()
