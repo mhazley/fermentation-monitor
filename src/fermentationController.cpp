@@ -7,7 +7,7 @@
 using namespace std;
 
 #define HYSTERESIS            ( 1.0 )
-#define PROCESS_DELAY         ( 500 )
+#define PROCESS_DELAY         ( 1000 )
 
 #define ACTIVATE_COOLING()    ( digitalWrite(IO_FREEZER_PIN, HIGH) )
 #define DEACTIVATE_COOLING()  ( digitalWrite(IO_FREEZER_PIN, LOW) )
@@ -69,7 +69,7 @@ void FermentationController::process()
     {
         if (this->didStart)
         {
-            if      ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getCelsius() ) > (this->setPoint + HYSTERESIS ) )
+            if      ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getTemperature() ) > (this->setPoint + HYSTERESIS ) )
             {
                 Serial.println( "Cooling" );
                 DEACTIVATE_HEATING();
@@ -77,7 +77,7 @@ void FermentationController::process()
 
                 setHeatCoolPublishData( false, true );
             }
-            else if ( ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getCelsius() ) > this->setPoint ) && ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getCelsius() ) < ( this->setPoint + ( HYSTERESIS / 2 ) ) ) )
+            else if ( ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getTemperature() ) > this->setPoint ) && ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getTemperature() ) < ( this->setPoint + ( HYSTERESIS / 2 ) ) ) )
             {
                 Serial.println( "Stable" );
                 DEACTIVATE_HEATING();
@@ -85,7 +85,7 @@ void FermentationController::process()
 
                 setHeatCoolPublishData( false, false );
             }
-            else if ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getCelsius() ) < (this->setPoint - HYSTERESIS ) ) 
+            else if ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getTemperature() ) < (this->setPoint - HYSTERESIS ) ) 
             {
                 Serial.println( "Heating" );
                 ACTIVATE_HEATING();
@@ -93,7 +93,7 @@ void FermentationController::process()
 
                 setHeatCoolPublishData( true, false );
             }
-            else if ( ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getCelsius() ) < this->setPoint ) && ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getCelsius() ) > ( this->setPoint - ( HYSTERESIS / 2 ) ) ) )
+            else if ( ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getTemperature() ) < this->setPoint ) && ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getTemperature() ) > ( this->setPoint - ( HYSTERESIS / 2 ) ) ) )
             {
                 Serial.println( "Stable" );
                 DEACTIVATE_HEATING();

@@ -1,7 +1,7 @@
 #ifndef AVERAGE_H
 #define AVERAGE_H
 
-#define AVERAGE_SIZE    ( 10 )
+#define AVERAGE_SIZE    ( 30 )
 
 class Average
 {

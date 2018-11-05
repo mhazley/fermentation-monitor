@@ -40,5 +40,5 @@ void Average::calculateAverage()
     }
     
     this->average = ( sum / (double)AVERAGE_SIZE );
-    Serial.printf("%f\n", this->average);
+    Serial.printf("%f\r\n", this->average);
 }

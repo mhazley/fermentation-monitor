@@ -5,15 +5,21 @@
 #include "boardDefs.h"
 #include <stdlib.h>
 
-#define S_TEMP_A         "TEMP_A"
-#define S_TEMP_B         "TEMP_B"
-
-#define S_TEMP_UNKNOWN   "UNKNOWN"
+#define S_TEMP_A                ( "TEMP_A" )
+#define S_TEMP_B                ( "TEMP_B" )
+#define S_TEMP_UNKNOWN          ( "UNKNOWN" )
+#define DEFAULT_SAMPLE_DELAY    ( 1000UL )
 
 TemperatureSensor::TemperatureSensor(TemperatureSensorRole _role, uint8_t _controlPin)
 {
     this->role = _role;
     this->controlPin = _controlPin;
+    
+    this->sampleTimer = new CallbackTimer<TemperatureSensor>(this, &TemperatureSensor::callback, true);
+    this->sampleTimer->setDuration(DEFAULT_SAMPLE_DELAY, MILLISECONDS);
+    this->avg = new Average();
+    
+    this->sampleTimer->start();
 };
 
 TemperatureSensorMap TemperatureSensor::initSensors()
@@ -36,13 +42,23 @@ TemperatureSensor* TemperatureSensor::GetSensor(TemperatureSensorRole role)
     return sensors[role];
 }
 
-float TemperatureSensor::getCelsius()
+void TemperatureSensor::callback()
 {
-    float temperature;
+    this->avg->addValue( this->getCelsius() );
+}
 
-    float vout = (float)analogRead(controlPin)/4095.0*3.3*1000;
+double TemperatureSensor::getTemperature()
+{
+    return this->avg->getAverage();
+}
 
-    float resistance = (float)(vout * 10000) / (float)(3300 - vout);
+double TemperatureSensor::getCelsius()
+{
+    double temperature;
+
+    double vout = (double)analogRead(controlPin)/4095.0*3.3*1000;
+
+    double resistance = (double)(vout * 10000) / (double)(3300 - vout);
 
     // Uses B-Parameter equation: 1/T = 1/T0 + 1/B*log(R/R0)
     temperature = resistance / 10000;     // (R/Ro)

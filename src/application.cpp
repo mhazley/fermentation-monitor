@@ -69,7 +69,7 @@ void setTemperaturePublishData()
     {
         TemperatureSensor* sensor = iterator->second;
 
-        String temperature = String((int)(sensor->getCelsius() * 100));
+        String temperature = String((int)(sensor->getTemperature() * 100));
 
         publishController->setValue(PUBLISH_TYPE_TEMPERATURE, temperature);
     }
@@ -138,7 +138,7 @@ void printSerial()
         Serial.print("\t");
         Serial.print(sensor->roleString());
         Serial.print(" -> ");
-        Serial.print(sensor->getCelsius());
+        Serial.print(sensor->getTemperature());
         Serial.println("°C");
     }
 
