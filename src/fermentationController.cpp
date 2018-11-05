@@ -6,7 +6,7 @@
 
 using namespace std;
 
-#define HYSTERESIS            ( 1 )
+#define HYSTERESIS            ( 1.0 )
 #define PROCESS_DELAY         ( 500 )
 
 #define ACTIVATE_COOLING()    ( digitalWrite(IO_FREEZER_PIN, HIGH) )
@@ -71,40 +71,36 @@ void FermentationController::process()
         {
             if      ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getCelsius() ) > (this->setPoint + HYSTERESIS ) )
             {
-                Serial.println( "1" );
+                Serial.println( "Cooling" );
                 DEACTIVATE_HEATING();
                 ACTIVATE_COOLING();
 
                 setHeatCoolPublishData( false, true );
             }
-            else if ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getCelsius() ) > this->setPoint )
+            else if ( ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getCelsius() ) > this->setPoint ) && ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getCelsius() ) < ( this->setPoint + ( HYSTERESIS / 2 ) ) ) )
             {
-                Serial.println( "2" );
+                Serial.println( "Stable" );
                 DEACTIVATE_HEATING();
                 DEACTIVATE_COOLING();
 
                 setHeatCoolPublishData( false, false );
             }
-            else if ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getCelsius() ) < (this->setPoint - HYSTERESIS ) )
+            else if ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getCelsius() ) < (this->setPoint - HYSTERESIS ) ) 
             {
-                Serial.println( "3" );
+                Serial.println( "Heating" );
                 ACTIVATE_HEATING();
                 DEACTIVATE_COOLING();
 
                 setHeatCoolPublishData( true, false );
             }
-            else if ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getCelsius() ) < this->setPoint )
+            else if ( ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getCelsius() ) < this->setPoint ) && ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getCelsius() ) > ( this->setPoint - ( HYSTERESIS / 2 ) ) ) )
             {
-                Serial.println( "4" );
+                Serial.println( "Stable" );
                 DEACTIVATE_HEATING();
                 DEACTIVATE_COOLING();
 
                 setHeatCoolPublishData( false, false );
             }
-        }
-        else
-        {
-            Serial.println();
         }
 
         this->lastProcessTime = millis();
@@ -115,6 +111,7 @@ void FermentationController::printDescription()
 {
     if (this->didStart)
     {
+        Serial.println();
         Serial.print("Fermenting with setpoint: ");
         Serial.println(this->setPoint);
     }

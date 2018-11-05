@@ -21,7 +21,7 @@ void setup()
 {
     Serial.begin(115200);
 
-    Particle.function("route", functionRouter);
+    Particle.function("setpoint", setSetpoint);
 
     publishController      = new PublishController();
     fermentationController = new FermentationController();
@@ -75,87 +75,29 @@ void setTemperaturePublishData()
     }
 }
 
-/**
- * Takes a string, parses and routes it to the
- * responsible function.
- *
- * Current functions and their parameter layouts:
- *
- * setpoint,23.4
- */
-int functionRouter(String params)
+int setSetpoint(String setPoint)
 {
-    char** args;
-    char*  pt;
-    char*  argString = new char[params.length() + 1];
-    char*  argString_copy = new char[params.length() + 1];
-    int    argCount = 0;
-    int    index = 0;
-    int    returnValue = -1;
-
-    strcpy( argString, params.c_str() );
-    strcpy( argString_copy, params.c_str() );
-
-    pt = strtok(argString, ",");
-
-    // Count arguments first for malloc
-    while (pt != NULL)
+    if( setPoint.length() > 0 )
     {
-        argCount++;
-        pt = strtok(NULL, ",");
-    }
-
-    args = (char**) malloc(argCount * sizeof(char*));
-
-    if (args != NULL)
-    {
-        pt = strtok(argString_copy, ",");
-
-        while (pt != NULL)
+        double setPointAsDouble = setPoint.toFloat();
+        
+        Serial.println("===> setSetpoint");
+        Serial.print("\t");Serial.println(setPointAsDouble);
+        
+        if (setPointAsDouble == 0)
         {
-            args[index++] = pt;
-            pt = strtok(NULL, ",");
+            fermentationController->stop();
         }
-
-        Serial.println("===> Routing");
-        for ( index = 0; index < argCount; index++ )
+        else
         {
-            Serial.print( "\t" );
-            Serial.println( args[index] );
+            fermentationController->start(setPointAsDouble);
         }
-
-        if ( ( strcmp("setpoint", args[0]) == 0 ) && argCount == 2 )
-        {
-            Serial.println( "setSetpoint()!!" );
-            setSetpoint( args[1] );
-            returnValue = ROUTE_OK;
-        }
-
-        // Free malloc'd memory
-        for ( index = 0; index < argCount; index++ )
-        {
-            free( args[index] );
-        }
-    }
-
-    free( args );
-    delete argString;
-    delete argString_copy;
-
-    return returnValue;
-}
-
-void setSetpoint(char* temp)
-{
-    double setPoint = atof(temp);
-
-    if (setPoint == 0)
-    {
-        fermentationController->stop();
+        
+        return 1;
     }
     else
     {
-        fermentationController->start(setPoint);
+        return -1;
     }
 }
 
