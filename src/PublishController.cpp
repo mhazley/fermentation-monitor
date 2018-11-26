@@ -60,6 +60,11 @@ void PublishController::callbackRemote()
 
 }
 
+void PublishController::setPublishable( bool val )
+{
+    publishable = val;
+}
+
 void PublishController::sendValue(bool print)
 {
     if( print )
@@ -68,5 +73,9 @@ void PublishController::sendValue(bool print)
         Serial.println(getRemoteUrlString((PublishType)publishType));
         Serial.println(publishMap[(PublishType)publishType]);
     }
-    Particle.publish(getRemoteUrlString((PublishType)publishType), publishMap[(PublishType)publishType], DEFAULT_PUBLISH_TTL, PRIVATE);
+    
+    if( publishable )
+    {
+        Particle.publish(getRemoteUrlString((PublishType)publishType), publishMap[(PublishType)publishType], DEFAULT_PUBLISH_TTL, PRIVATE);
+    }
 }

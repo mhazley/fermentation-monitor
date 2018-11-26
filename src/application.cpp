@@ -22,6 +22,8 @@ void setup()
     Serial.begin(115200);
 
     Particle.function("setpoint", setSetpoint);
+    Particle.function("setPublishable", setPublishable);
+    
 
     publishController      = new PublishController();
     fermentationController = new FermentationController();
@@ -72,6 +74,32 @@ void setTemperaturePublishData()
         String temperature = String((int)(sensor->getTemperature() * 100));
 
         publishController->setValue(PUBLISH_TYPE_TEMPERATURE, temperature);
+    }
+}
+
+int setPublishable(String publishable)
+{
+    if( publishable.length() > 0 )
+    {
+        int pubInt = publishable.toInt();
+        
+        Serial.println("===> setPublishable");
+        Serial.print("\t");Serial.println(pubInt);
+        
+        if (pubInt == 0)
+        {
+            publishController->setPublishable(false);
+        }
+        else
+        {
+            publishController->setPublishable(true);
+        }
+        
+        return 1;
+    }
+    else
+    {
+        return -1;
     }
 }
 

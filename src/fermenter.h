@@ -18,6 +18,7 @@
 
 void setTemperaturePublishData();
 int setSetpoint(String setpoint);
+int setPublishable(String publishable);
 bool checkCanSerialPrint();
 void printSerial();
 PublishController* getPublishController();
