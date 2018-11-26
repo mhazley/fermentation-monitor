@@ -14,14 +14,16 @@ PublishController*          publishController;
 FermentationController*     fermentationController;
 
 unsigned long lastSerialTime  = 0UL;
-unsigned long serialDelay     = 1000UL;
+unsigned long serialDelay     = 2000UL;
 bool          serialPrintLoop = false;
 
 void setup()
 {
     Serial.begin(115200);
 
-    Particle.function("route", functionRouter);
+    Particle.function("setpoint", setSetpoint);
+    Particle.function("setPublishable", setPublishable);
+    
 
     publishController      = new PublishController();
     fermentationController = new FermentationController();
@@ -69,93 +71,61 @@ void setTemperaturePublishData()
     {
         TemperatureSensor* sensor = iterator->second;
 
-        String temperature = String((int)(sensor->getCelsius() * 100));
+        String temperature = String((int)(sensor->getTemperature() * 100));
 
         publishController->setValue(PUBLISH_TYPE_TEMPERATURE, temperature);
     }
 }
 
-/**
- * Takes a string, parses and routes it to the
- * responsible function.
- *
- * Current functions and their parameter layouts:
- *
- * setpoint,23.4
- */
-int functionRouter(String params)
+int setPublishable(String publishable)
 {
-    char** args;
-    char*  pt;
-    char*  argString = new char[params.length() + 1];
-    char*  argString_copy = new char[params.length() + 1];
-    int    argCount = 0;
-    int    index = 0;
-    int    returnValue = -1;
-
-    strcpy( argString, params.c_str() );
-    strcpy( argString_copy, params.c_str() );
-
-    pt = strtok(argString, ",");
-
-    // Count arguments first for malloc
-    while (pt != NULL)
+    if( publishable.length() > 0 )
     {
-        argCount++;
-        pt = strtok(NULL, ",");
-    }
-
-    args = (char**) malloc(argCount * sizeof(char*));
-
-    if (args != NULL)
-    {
-        pt = strtok(argString_copy, ",");
-
-        while (pt != NULL)
+        int pubInt = publishable.toInt();
+        
+        Serial.println("===> setPublishable");
+        Serial.print("\t");Serial.println(pubInt);
+        
+        if (pubInt == 0)
         {
-            args[index++] = pt;
-            pt = strtok(NULL, ",");
+            publishController->setPublishable(false);
         }
-
-        Serial.println("===> Routing");
-        for ( index = 0; index < argCount; index++ )
+        else
         {
-            Serial.print( "\t" );
-            Serial.println( args[index] );
+            publishController->setPublishable(true);
         }
-
-        if ( ( strcmp("setpoint", args[0]) == 0 ) && argCount == 2 )
-        {
-            Serial.println( "setSetpoint()!!" );
-            setSetpoint( args[1] );
-            returnValue = ROUTE_OK;
-        }
-
-        // Free malloc'd memory
-        for ( index = 0; index < argCount; index++ )
-        {
-            free( args[index] );
-        }
-    }
-
-    free( args );
-    delete argString;
-    delete argString_copy;
-
-    return returnValue;
-}
-
-void setSetpoint(char* temp)
-{
-    double setPoint = atof(temp);
-
-    if (setPoint == 0)
-    {
-        fermentationController->stop();
+        
+        return 1;
     }
     else
     {
-        fermentationController->start(setPoint);
+        return -1;
+    }
+}
+
+int setSetpoint(String setPoint)
+{
+    if( setPoint.length() > 0 )
+    {
+        double setPointAsDouble = setPoint.toFloat();
+        
+        Serial.println("===> setSetpoint");
+        Serial.print("\t");Serial.println(setPointAsDouble);
+        
+        if (setPointAsDouble == 0)
+        {
+            fermentationController->stop();
+        }
+        else
+        {
+            fermentationController->start(setPointAsDouble);
+        }
+        
+        return 1;
+    }
+    else
+    {
+        return -1;
     }
 }
 
@@ -196,7 +166,7 @@ void printSerial()
         Serial.print("\t");
         Serial.print(sensor->roleString());
         Serial.print(" -> ");
-        Serial.print(sensor->getCelsius());
+        Serial.print(sensor->getTemperature());
         Serial.println("°C");
     }
 

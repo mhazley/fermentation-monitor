@@ -13,8 +13,9 @@ enum PublishType
     PUBLISH_TYPE_HEATING     = 2,
     PUBLISH_TYPE_COOLING     = 3,
     PUBLISH_TYPE_RUNNING     = 4,
+    PUBLISH_TYPE_STATUS      = 5,
 
-    PUBLISH_TYPE_MAX         = 5
+    PUBLISH_TYPE_MAX         = 6
 };
 
 enum PublishError
@@ -42,11 +43,14 @@ class PublishController
         void sendValue(bool print);
 
         const char* getRemoteUrlString(PublishType type);
+        
+        bool publishable = false;
 
     public:
         PublishController();
         void start();
         void callbackRemote();
+        void setPublishable( bool val );
 
         /* this may be used to set a value, if the type has not been
          * set before it will be added to the map, if it has been

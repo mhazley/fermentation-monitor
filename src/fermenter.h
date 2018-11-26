@@ -17,8 +17,8 @@
 } while (0)
 
 void setTemperaturePublishData();
-int functionRouter(String params);
-void setSetpoint(char* temp);
+int setSetpoint(String setpoint);
+int setPublishable(String publishable);
 bool checkCanSerialPrint();
 void printSerial();
 PublishController* getPublishController();

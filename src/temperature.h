@@ -2,6 +2,8 @@
 #define TEMPERATURE_H
 
 #include "MapHack.h"
+#include "CallbackTimer.h"
+#include "average.h"
 
 enum TemperatureSensorRole {
   TEMP_A      = 1u << 0,
@@ -16,6 +18,11 @@ class TemperatureSensor
         static TemperatureSensorMap initSensors(void);
 
         float value = 0;
+        CallbackTimer<TemperatureSensor>* sampleTimer;
+        Average* avg;
+
+        double getCelsius();        
+
 
     public:
         static TemperatureSensorMap* AllSensors   ();
@@ -30,7 +37,8 @@ class TemperatureSensor
 
         const char* roleString();
 
-        float getCelsius();
+        double getTemperature();
+        void callback();
 };
 
 typedef std::map<TemperatureSensorRole, TemperatureSensor*> TemperatureSensorMap;

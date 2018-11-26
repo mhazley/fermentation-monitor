@@ -8,8 +8,8 @@
  *************************************************************/
 
 // Thermistors
-const static uint8_t IO_TEMP_A_PIN            = A0;
-const static uint8_t IO_HEATER_PIN            = D2;
-const static uint8_t IO_FREEZER_PIN           = D1;
+static uint8_t IO_TEMP_A_PIN            = A5;
+static uint8_t IO_HEATER_PIN            = D0;
+static uint8_t IO_FREEZER_PIN           = D1;
 
 #endif // BREADBOARD_H
