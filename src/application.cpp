@@ -22,6 +22,7 @@ void setup()
     Serial.begin(115200);
 
     Particle.function("setpoint", setSetpoint);
+    Particle.function("cooling", setCoolingSetpoint);
     Particle.function("setPublishable", setPublishable);
     
 
@@ -118,7 +119,33 @@ int setSetpoint(String setPoint)
         }
         else
         {
-            fermentationController->start(setPointAsDouble);
+            fermentationController->start(RUNNING, setPointAsDouble);
+        }
+        
+        return 1;
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+int setCoolingSetpoint(String setPoint)
+{
+    if( setPoint.length() > 0 )
+    {
+        double setPointAsDouble = setPoint.toFloat();
+        
+        Serial.println("===> Cooling");
+        Serial.print("\t");Serial.println(setPointAsDouble);
+        
+        if (setPointAsDouble == 0)
+        {
+            fermentationController->stop();
+        }
+        else
+        {
+            fermentationController->start(COOLING, setPointAsDouble);
         }
         
         return 1;

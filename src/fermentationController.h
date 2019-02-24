@@ -3,11 +3,17 @@
 
 #include "application.h"
 
+typedef enum {
+    NOT_RUNNING = 0,
+    RUNNING = 1,
+    COOLING = 2
+} ferm_mode_t;
+
 class FermentationController
 {
 
 private:
-    bool          didStart = false;
+    ferm_mode_t   mode = NOT_RUNNING;
     double        setPoint = 0.0;
     bool          heating = false;
     bool          cooling = false;
@@ -19,7 +25,7 @@ private:
 
 public:
     void   process();
-    void   start(double setPoint);
+    void   start(ferm_mode_t mode, double setPoint);
     void   stop();
     void   printDescription();
     bool   isStarted();

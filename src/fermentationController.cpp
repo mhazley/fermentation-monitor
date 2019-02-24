@@ -8,6 +8,7 @@ using namespace std;
 
 #define HYSTERESIS            ( 1.0 )
 #define PROCESS_DELAY         ( 1000 )
+#define SAISON                ( 1 )
 
 #define ACTIVATE_COOLING()    ( digitalWrite(IO_FREEZER_PIN, HIGH) )
 #define DEACTIVATE_COOLING()  ( digitalWrite(IO_FREEZER_PIN, LOW) )
@@ -19,7 +20,7 @@ FermentationController::FermentationController()
     pinMode(IO_FREEZER_PIN, OUTPUT);
     pinMode(IO_HEATER_PIN, OUTPUT);
 
-    this->didStart = false;
+    this->mode = NOT_RUNNING;
 
     DEACTIVATE_HEATING();
     DEACTIVATE_COOLING();
@@ -29,17 +30,10 @@ FermentationController::FermentationController()
     setRunningPublishData();
 }
 
-void FermentationController::start(double setPoint)
+void FermentationController::start(ferm_mode_t mode, double setPoint)
 {
-    if(this->didStart == false)
-    {
-        this->setPoint = setPoint;
-        this->didStart = true;
-    }
-    else
-    {
-        this->setPoint = setPoint;
-    }
+    this->setPoint = setPoint;
+    this->mode = mode;
 
     setSetPointPublishData();
     setRunningPublishData();
@@ -47,29 +41,30 @@ void FermentationController::start(double setPoint)
 
 void FermentationController::stop()
 {
-    if (this->didStart == true)
-    {
-        this->didStart = false;
-        DEACTIVATE_HEATING();
-        DEACTIVATE_COOLING();
-        setHeatCoolPublishData( false, false );
-        setSetPointPublishData();
-        setRunningPublishData();
-    }
+    this->mode = NOT_RUNNING;
+    DEACTIVATE_HEATING();
+    DEACTIVATE_COOLING();
+    setHeatCoolPublishData( false, false );
+    setSetPointPublishData();
+    setRunningPublishData();
 }
 
 bool FermentationController::isStarted()
 {
-    return this->didStart;
+    return !(this->mode == NOT_RUNNING);
 }
 
 void FermentationController::process()
 {
     if( ( this->lastProcessTime + PROCESS_DELAY ) < millis() )
     {
-        if (this->didStart)
+        if( this->mode != NOT_RUNNING )
         {
+#if SAISON==1
+            if      ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getTemperature() ) > (this->setPoint + HYSTERESIS + 2 ) )
+#else
             if      ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getTemperature() ) > (this->setPoint + HYSTERESIS ) )
+#endif
             {
                 Serial.println( "Cooling" );
                 DEACTIVATE_HEATING();
@@ -87,8 +82,13 @@ void FermentationController::process()
             }
             else if ( ( TemperatureSensor::AllSensors()->at( TEMP_A )->getTemperature() ) < (this->setPoint - HYSTERESIS ) ) 
             {
-                Serial.println( "Heating" );
-                ACTIVATE_HEATING();
+                
+                if( this->mode == RUNNING )
+                {
+                    // Only allow heating if in running mode
+                    Serial.println( "Heating" );
+                    ACTIVATE_HEATING();
+                }
                 DEACTIVATE_COOLING();
 
                 setHeatCoolPublishData( true, false );
@@ -109,7 +109,7 @@ void FermentationController::process()
 
 void FermentationController::printDescription()
 {
-    if (this->didStart)
+    if (this->mode != NOT_RUNNING)
     {
         Serial.println();
         Serial.print("Fermenting with setpoint: ");
@@ -135,7 +135,18 @@ void FermentationController::setSetPointPublishData()
 
 void FermentationController::setRunningPublishData()
 {
-    String sRunning = this->didStart ? String(1) : String(0);
+    String sRunning = "NOT RUNNING";
+    if( this->mode != NOT_RUNNING )
+    {
+        if( this->mode == RUNNING )
+        {
+            sRunning = "RUNNING";
+        }
+        else if( this->mode == COOLING )
+        {
+            sRunning = "COOLING";
+        }
+    }
 
     getPublishController()->setValue(PUBLISH_TYPE_RUNNING, sRunning);
 }
