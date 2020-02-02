@@ -1,5 +1,0 @@
-{
-    "particle.targetPlatform": "boron",
-    "particle.targetDevice": "",
-    "C_Cpp.default.configurationProvider": "particle.particle-vscode-core"
-}
