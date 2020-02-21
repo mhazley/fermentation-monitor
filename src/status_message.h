@@ -4,6 +4,7 @@
 #include "Particle.h"
 #include "Arduino.h"
 #include "ArduinoJson.h"
+#include "fermentation.h"
 
 class StatusMessage
 {
@@ -14,7 +15,7 @@ private:
 public:
     StatusMessage() : json_buffer(1024) {}
     String serialize_message( void );
-    void init( float out_temp, float amb_temp, float tw_temp );
+    void init( float out_temp, float amb_temp, float tw_temp, bool heating, bool cooling, float setpoint, ferm_mode_t mode );
 };
 
 #endif // STATUS_MESSAGE_H
