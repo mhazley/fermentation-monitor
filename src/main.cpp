@@ -10,7 +10,7 @@
 
 // Module Functions
 void print_serial( void );
-int get_status( String cmd );
+String get_status();
 int start_normal_fermentation( String setpoint );
 int start_saison_fermentation( String setpoint );
 int stop_fermentation( String cmd );
@@ -24,7 +24,6 @@ static DS18                 m_ds18_driver( IO_ONE_WIRE_BUS_PIN );
 static TemperatureSensor    m_temp_outside( &m_ds18_driver, m_outside_addr );
 static TemperatureSensor    m_temp_ambient( &m_ds18_driver, m_ambient_addr );
 static TemperatureSensor    m_temp_thermow( &m_ds18_driver, m_thermow_addr );
-static bool                 m_data_request = false;
 static Fermentation         m_fermentation;
 
 // Temperature Sampling Timers
@@ -43,7 +42,7 @@ void setup()
     Serial.begin(115200);
 
     // Particle.function("setpoint", setpoint);
-    Particle.function("get_status", get_status);
+    Particle.variable("get_status", get_status);
     Particle.function("ferment", start_normal_fermentation);
     Particle.function("ferment_saison", start_saison_fermentation);
     Particle.function("stop", stop_fermentation);
@@ -57,26 +56,7 @@ void setup()
 
 void loop()
 {
-    if( m_data_request )
-    {
-        bool heating, cooling;
-        float setpoint;
-        ferm_mode_t mode;
 
-        m_fermentation.get_state( &heating, &cooling, &setpoint, &mode );
-    
-        StatusMessage msg;
-        msg.init( m_temp_outside.get_temperature(), 
-                  m_temp_ambient.get_temperature(),
-                  m_temp_thermow.get_temperature(), 
-                  heating,
-                  cooling,
-                  setpoint,
-                  mode);
-        
-        // If it publishes successfully then we set request to false
-        m_data_request = !Particle.publish(STATUS_TOPIC, msg.serialize_message(), PRIVATE );
-    }
 }
 
 int start_normal_fermentation( String setpoint )
@@ -117,10 +97,24 @@ int stop_fermentation( String cmd )
     return 1;
 }
 
-int get_status( String cmd )
+String get_status()
 {
-    m_data_request = true;
-    return 1;
+    bool heating, cooling;
+    float setpoint;
+    ferm_mode_t mode;
+
+    m_fermentation.get_state( &heating, &cooling, &setpoint, &mode );
+
+    StatusMessage msg;
+    msg.init( m_temp_outside.get_temperature(), 
+                m_temp_ambient.get_temperature(),
+                m_temp_thermow.get_temperature(), 
+                heating,
+                cooling,
+                setpoint,
+                mode);
+    
+    return msg.serialize_message();
 }
 
 void ferment( void )
