@@ -1,86 +1,46 @@
 #include "temperature.h"
 
-#include <math.h>
-#include "spark_wiring.h"
-#include "boardDefs.h"
-#include <stdlib.h>
-
-#define S_TEMP_A                ( "TEMP_A" )
-#define S_TEMP_B                ( "TEMP_B" )
-#define S_TEMP_UNKNOWN          ( "UNKNOWN" )
-#define DEFAULT_SAMPLE_DELAY    ( 1000UL )
-
-TemperatureSensor::TemperatureSensor(TemperatureSensorRole _role, uint8_t _controlPin)
+TemperatureSensor::TemperatureSensor( DS18* ds18_driver, uint8_t* addr )
 {
-    this->role = _role;
-    this->controlPin = _controlPin;
-    
-    this->sampleTimer = new CallbackTimer<TemperatureSensor>(this, &TemperatureSensor::callback, true);
-    this->sampleTimer->setDuration(DEFAULT_SAMPLE_DELAY, MILLISECONDS);
-    this->avg = new Average();
-    
-    this->sampleTimer->start();
-};
-
-TemperatureSensorMap TemperatureSensor::initSensors()
-{
-    TemperatureSensorMap sensors;
-
-    sensors[TEMP_A] = new TemperatureSensor(TEMP_A, IO_TEMP_A_PIN);
-
-    return sensors;
-};
-TemperatureSensorMap TemperatureSensor::sensors = initSensors();
-
-TemperatureSensorMap* TemperatureSensor::AllSensors()
-{
-    return &sensors;
+    this->ds18_driver = ds18_driver;
+    this-> addr = addr;
 }
 
-TemperatureSensor* TemperatureSensor::GetSensor(TemperatureSensorRole role)
+void TemperatureSensor::sample( void )
 {
-    return sensors[role];
-}
-
-void TemperatureSensor::callback()
-{
-    this->avg->addValue( this->getCelsius() );
-}
-
-double TemperatureSensor::getTemperature()
-{
-    return this->avg->getAverage();
-}
-
-double TemperatureSensor::getCelsius()
-{
-    double temperature;
-
-    double vout = (double)analogRead(controlPin)/4095.0*3.3*1000;
-
-    double resistance = (double)(vout * 10000) / (double)(3300 - vout);
-
-    // Uses B-Parameter equation: 1/T = 1/T0 + 1/B*log(R/R0)
-    temperature = resistance / 10000;     // (R/Ro)
-    temperature = log(temperature);       // ln(R/Ro)
-    temperature /= 3950;                  // 1/B * ln(R/Ro)
-    temperature += 1.0 / (25 + 273.15);   // + (1/To)
-    temperature = 1.0 / temperature;      // Invert
-    temperature -= 273.15;                // convert to C
-
-    return temperature;
-};
-
-const char* TemperatureSensor::roleString()
-{
-    return TemperatureSensor::RoleToString(this->role);
-}
-
-const char* TemperatureSensor::RoleToString(TemperatureSensorRole role)
-{
-    switch (role) {
-        case TEMP_A:        return S_TEMP_A;      break;
+    if( has_converted )
+    {
+        if( ds18_driver->read( addr ) )
+        {
+            if( first_pass )
+            {
+                _temperature[0] = ds18_driver->celsius();
+                for (int i = 3; i > 0; i--) { _temperature[i] = _temperature[0]; }
+                first_pass = false;
+            }
+            else
+            {
+                for (int i = 3; i > 0; i--) { _temperature[i] = _temperature[i - 1]; }
+                _temperature[0] = ds18_driver->celsius();
+                update_filter();
+            }
+            
+        }
     }
 
-    return S_TEMP_UNKNOWN;
+    ds18_driver->start_conv( addr );
+    has_converted = true;
+}
+
+void TemperatureSensor::update_filter( void )
+{
+    for (int i = 3; i > 0; i--) { _filter[i] = _filter[i - 1]; }
+
+    _filter[0] = (_temperature[3] + _temperature[0] + 3 * (_temperature[2] + _temperature[1]))/1.092799972e+03
+                      + (0.6600489526 * _filter[3]) + (-2.2533982563 * _filter[2]) + (2.5860286592 * _filter[1]);
+}
+
+float TemperatureSensor::get_temperature( void )
+{
+    return _filter[0];
 }
