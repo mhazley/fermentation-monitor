@@ -3,6 +3,7 @@
 
 #define COOLING_HYSTERESIS    ( 0.5 )
 #define HEATING_HYSTERESIS    ( 0.1 )
+#define SAISON_UPPER_LIMIT    ( 26 )
 
 #define COOLING(state) \
     do { \
@@ -40,13 +41,24 @@ void Fermentation::process( float beer_temp )
 {
     if( this->mode != IDLE )
     {
-        if      ( beer_temp > (this->setpoint + COOLING_HYSTERESIS ) && ( this->mode != RUNNING_S ) )
+        if      ( beer_temp > (this->setpoint + COOLING_HYSTERESIS ) )
         {
-            HEATING( false );
-            COOLING( true );
+            if( ( this->mode != RUNNING_S ) || ( beer_temp > SAISON_UPPER_LIMIT) )
+            {
+                HEATING( false );
+                COOLING( true );
 
-            heating = false;
-            cooling = true;
+                heating = false;
+                cooling = true;
+            }
+            else if( ( this->mode == RUNNING_S ) && ( beer_temp < SAISON_UPPER_LIMIT) )
+            {
+                HEATING( false );
+                COOLING( false );
+            
+                heating = false;
+                cooling = false;
+            }
         }
         else if ( ( beer_temp > this->setpoint ) && ( beer_temp <= ( this->setpoint + COOLING_HYSTERESIS ) ) )
         {
