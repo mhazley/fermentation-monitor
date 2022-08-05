@@ -5,8 +5,13 @@
 #include "board_defs.h"
 #include "fermentation.h"
 
-#define ADDR_LEN        8
-#define STATUS_TOPIC    "geometry.fermenter.status"
+SYSTEM_MODE(MANUAL);
+SYSTEM_THREAD(ENABLED);
+
+#define ADDR_LEN                8
+#define STATUS_TOPIC            "geometry.fermenter.status"
+#define EEPROM_ADDR_STATUS      0
+#define EEPROM_ADDR_SETPOINT    10
 
 // Module Functions
 void print_serial( void );
@@ -15,6 +20,8 @@ int start_normal_fermentation( String setpoint );
 int start_saison_fermentation( String setpoint );
 int stop_fermentation( String cmd );
 void ferment( void );
+void check_recovery( void );
+static void checkConnection();
 
 // Module Data
 static uint8_t              m_outside_addr[ADDR_LEN] = { 0x28, 0xAA, 0x30, 0x66, 0x53, 0x14, 0x01, 0x86 };
@@ -25,6 +32,7 @@ static TemperatureSensor    m_temp_outside( &m_ds18_driver, m_outside_addr );
 static TemperatureSensor    m_temp_ambient( &m_ds18_driver, m_ambient_addr );
 static TemperatureSensor    m_temp_thermow( &m_ds18_driver, m_thermow_addr );
 static Fermentation         m_fermentation;
+static bool                 m_connecting_to_cloud = false;
 
 // Temperature Sampling Timers
 Timer                       m_timer_temp_outside( 1000, &TemperatureSensor::sample, m_temp_outside );
@@ -41,6 +49,9 @@ void setup()
 {
     Serial.begin(115200);
 
+    m_connecting_to_cloud = false;
+    checkConnection();
+
     // Particle.function("setpoint", setpoint);
     Particle.variable("get_status", get_status);
     Particle.function("ferment", start_normal_fermentation);
@@ -52,11 +63,13 @@ void setup()
     m_timer_temp_thermow.start();
     m_timer_serial.start();
     m_timer_ferment.start();
+    check_recovery();
 }
 
 void loop()
 {
-
+    checkConnection();
+    Particle.process();
 }
 
 int start_normal_fermentation( String setpoint )
@@ -66,6 +79,8 @@ int start_normal_fermentation( String setpoint )
         float m_set_point_as_float = setpoint.toFloat();
         
         m_fermentation.start( m_set_point_as_float, RUNNING);
+        EEPROM.put(EEPROM_ADDR_STATUS, RUNNING);
+        EEPROM.put(EEPROM_ADDR_SETPOINT, m_set_point_as_float);
         
         return 1;
     }
@@ -82,6 +97,8 @@ int start_saison_fermentation( String setpoint )
         float m_set_point_as_float = setpoint.toFloat();
         
         m_fermentation.start( m_set_point_as_float, RUNNING_S);
+        EEPROM.put(EEPROM_ADDR_STATUS, RUNNING_S);
+        EEPROM.put(EEPROM_ADDR_SETPOINT, m_set_point_as_float);
         
         return 1;
     }
@@ -94,6 +111,7 @@ int start_saison_fermentation( String setpoint )
 int stop_fermentation( String cmd )
 {
     m_fermentation.stop();
+    EEPROM.put(EEPROM_ADDR_STATUS, IDLE);
     return 1;
 }
 
@@ -120,6 +138,53 @@ String get_status()
 void ferment( void )
 {
     m_fermentation.process( m_temp_thermow.get_temperature() );
+}
+
+void check_recovery( void )
+{
+    ferm_mode_t mode;
+    EEPROM.get(EEPROM_ADDR_STATUS, mode);
+
+    if( ( mode != IDLE ) && ( mode != RUNNING ) && ( mode != RUNNING_S ) )
+    {
+        // Not set
+        return;
+    }
+
+    float setpoint;
+    EEPROM.get(EEPROM_ADDR_STATUS, setpoint);
+
+    if( ( setpoint < 0.0 ) || ( setpoint >40.0 ) )
+    {
+        // Setpoint seems to be outside sensible range
+        return;
+    }
+
+    // Otherwise, seems sane, start fermenting
+    Serial.print("Recovering fermentation: ");
+    Serial.print(mode);Serial.print(", ");
+    Serial.print(setpoint);Serial.println();
+    m_fermentation.start( setpoint, mode);
+
+    return;
+}
+
+void checkConnection()
+{
+    // Connected to cloud, so try to connect to Particle if not connected
+    if( !Particle.connected() )
+    {
+        Particle.connect();
+        m_connecting_to_cloud = true;
+    }
+    else
+    {
+        if( m_connecting_to_cloud )
+        {
+            Serial.println("Connected to particle!");
+        }
+        m_connecting_to_cloud = false;
+    }    
 }
 
 void print_serial( void )
